@@ -25,13 +25,13 @@ Conversion notes:
 
 ## Introduction
 
-The Horizon GX2200 radio is also an AIS receiver, and has a built-in GPS. It has an AIS display, but it's low-resolution. Fortunately, it also has the ability to send NMEA-compliant messages out along some wires that come out the back of the radio. When the radio is properly configured, but GPS and AIS messages come out of the same pair of wires (grey and brown) at 38400 baud.
+The Horizon GX2200 radio is also an AIS receiver, and has a built-in GPS. It has an AIS display, but it's low-resolution. Fortunately, it also has the ability to send NMEA-compliant messages out along some wires that come out the back of the radio. When the radio is properly configured, both GPS and AIS messages come out of the same pair of wires (grey and brown) at 38400 baud.
 
-The "bridge" device described here transfers these messages from their "wired" form to wireless, but wrapping each message in a UDP packet (a transmission protocol designed to carry short messages, any one of which is not essential and can be lost). UDP is generally reliable, and because both the GPS and AIS messages are sent multiple times in quick succession, the possibility of occasional packet-loss was not a concern for me.
+The "bridge" device described here transfers these messages from their "wired" form to wireless, by wrapping each message in a UDP packet (a transmission protocol designed to carry short messages, any one of which is not essential and can be lost). UDP is generally reliable, and because both the GPS and AIS messages are sent multiple times in quick succession, the possibility of occasional packet-loss was not a concern for me.
 
 UDP packets can be sent across a Wifi network, and typically have a destination address, indicating the computer to which they are to be set, and a "port" on that computer as well --- this is a little like having a street address and an apartment number. The packets sent by the bridge unit are "broadcast" packets, which means that they are sent to _all_ addresses on the network, but they still have a "port" number as well -- in this case 10110, which is an informal standard for NMEA packets.
 
-What that means is that any computer on the network can "listen" for these packets and decode them. In particular, my tablet, on which I run OpenCPN, can be set up to listen for this packets and use them to move the chart to my current location (via the GPS data in the packets), and to display the nearby traffic that's indicated by the AIS data that's in other packets.
+What that means is that any computer on the network can "listen" for these packets and decode them. In particular, my tablet, on which I run OpenCPN, can be set up to listen for this packets and use them to move the chart to my current location (via the GPS data in the packets), and to display the nearby boat traffic that's indicated by the AIS data that's in other packets.
 
 
 ## System setup
@@ -40,13 +40,13 @@ The setup for my electronics is relatively simple, and is shown here:
 
 
 ```
-[GX2200]------[BRIDGE] …… [Wireless Router] …... [TABLET]
+[GX2200]------[BRIDGE] ...... [Wireless Router] ...... [TABLET]
 
 Dashes are wired connections; dots are wireless.
 ```
 
 
-The wireless router is a basic old Netgear router; it's run in the most basic mode, with a simple password for authentication. Normally a wireless router would have a connected to a cable-modem or some other thing that connected it to a wide-area network, but I don't have those on my boat. So this router is merely a way to connect various wireless devices on my boat to each other. I've set up this entire system at home as well, using my home's wireless router instead of the boat's; it provided a good way to test the system, and it worked fine (although I had to place the GX2200 antenna near a window so that it could get a GPS fix and pick up the AIS messages). My home computer, a Mac, also connected to the Wireless router, and by running the "terminal" program, installing a tool called "socat", and then typing
+The wireless router is a basic old Netgear router; it's run in the most basic mode, with a simple password for authentication. Normally a wireless router would be connected to a cable-modem or some other thing that connected it to a wide-area network, but I don't have those on my boat. So this router is merely a way to connect various wireless devices on my boat to each other. I've set up this entire system at home as well, using my home's wireless router instead of the boat's; it provided a good way to test the system, and it worked fine (although I had to place the GX2200 antenna near a window so that it could get a GPS fix and pick up the AIS messages). My home computer, a Mac, also connected to the Wireless router, and by running the "terminal" program, installing a tool called "socat", and then typing
 
 
 ```
@@ -54,7 +54,6 @@ socat -u udp-recv:10110 -
 ```
 
 
-\
 (the trailing hyphen is important!), I was able to see all the NMEA packets printed out on my screen.
 
 An alternative setup is to use a "switch" rather than a wireless router, and do everything with ethernet cables, rather than wirelessly. The bridge unit described here is of _no use_ for that approach.
@@ -68,7 +67,7 @@ The bridge has 3 pairs of connectors.
 
 The first is for +12V and ground, i.e., the first supplies power to the unit. There's no on/off switch, and if you want one, you should install it in the 12V line that powers the unit.
 
-The second pair is for the NMEA inputs. The particular NMEA handling piece of hardware that I used seems to want the two inputs attached "wrong". The NMEA standard has a notion of A and B connections, sometimes called + and -, or A+ and B- (as on my RS485 unit). As shown on page 19 of the GX2200 manual, the Gray wire is NMEA +, and the Brown wire is NMEA -. It appears that my RS485 units may be mislabelled, as the system works with Brown connected to A+, gray to B-.
+The second pair is for the NMEA inputs. The particular NMEA-handling piece of hardware that I used seems to want the two inputs attached "wrong". The NMEA standard has a notion of A and B connections, sometimes called + and -, or A+ and B- (as on my RS485 unit). As shown on page 19 of the GX2200 manual, the Gray wire is NMEA +, and the Brown wire is NMEA -. It appears that my RS485 units may be mislabelled, as the system works with Brown connected to A+, gray to B-.
 
 The third pair of connectors serves two purposes. First, if you place a normally-open pushbutton across the two terminals, you can reset the bridge unit by pressing it at the right moment during startup. (See the "Operations" section for details.) Second, they can be attached to a serial port on a computer, and when you do so, a terminal program that connects with this port will receive various status messages during operation. This is primarily a tool for debugging, and not expected to be used in ordinary installations. Only if you understand both the circuitry of the bridge and the programming should you find anything of interest here.
 
@@ -91,9 +90,9 @@ A single vessel breaker or power switch turns on both the radio and the bridge u
 
 ## Operation
 
-Generally, when power is applied to the bridge unit, the green and red LEDs flash, the unit tries to connect to its last known WiFi network, and then it begins turning NMEA sentences into UDP packets and sending them out. This sequence of events can be altered by either a press of the "reset" button during the correct period, or by a problem with the WiFi network, or by there being no last known WiFi network (typically during the first startup). We'll go through the details of this startup process in a moment.
+Generally, when power is applied to the bridge unit, the green and red LEDs flash, the unit tries to connect to its last known WiFi network, and when it's done so, it then begins turning NMEA sentences into UDP packets and sending them out. This sequence of events can be altered by either a press of the "reset" button during the correct period, or by a problem with the WiFi network, or by there being no last known WiFi network (typically during the first startup). We'll go through the details of this startup process in a moment.
 
-After startup, the bridge receives NMEA sentences from the GX2200 and tries to translate them into UDP packets. If (i) a sentence is too long (more than 128 characters) or (ii) a start-character (either a $ or a ! character) is followed by another start-character before an end-character (\n), or (iii) there are miscellaneous characters before the first start-character, or (iv) there are miscellaneous characters between an end-character and the next start-character, then the bridge unit ignores that data, but also signals an error by flashing the red LED for one second. In typical operation, you should never see the red LED after the first few second of operation. (When the unit is first listening to data from the GX2200, it may start listening mid-sentence, causing a a type-iii error, for instance.) If there's lots of electrical noise in the environment, it's possible that there may be substantial errors in the data the bridge receives, and the red LED may often flash. If this happens, you should not trust the bridge to do its job!
+After startup, the bridge receives NMEA sentences from the GX2200 and tries to translate them into UDP packets. If (i) a sentence is too long (more than 128 characters) or (ii) a start-character (either a $ or a ! character) is followed by another start-character before an end-character (\n), or (iii) there are miscellaneous characters before the first start-character, or (iv) there are miscellaneous characters between an end-character and the next start-character, then the bridge unit ignores that data, but also signals an error by flashing the red LED for one second. In typical operation, you should never see the red LED after the first few seconds of operation. (When the unit is first listening to data from the GX2200, it may start listening mid-sentence, causing a a type-iii error, for instance.) If there's lots of electrical noise in the environment, it's possible that there may be substantial errors in the data the bridge receives, and the red LED may often flash. If this happens, you should not trust the bridge to do its job!
 
 Let's return to the typical startup sequence. It looks like this:
 
@@ -118,8 +117,6 @@ Following this, in normal operation, each time a sentence is sent out as a UDP p
 
 Before installing the bridge at all, let's set up the radio to produce the right kind of data. Turn on your radio, and (following the instructions on page 94 of the manual, repeated here) set up the radio to output 38400 baud:
 
-
-
 1.  Press and hold the Call/Menu key until Setup Menu appears
 1.  Rotate the CH know to select "GENERAL SETUP" menu
 1.  Press the SELECT soft key, then rotate the CH knob to select NMEA DATA IN/OUT.
@@ -129,8 +126,6 @@ Before installing the bridge at all, let's set up the radio to produce the right
 1.  Press the QUIT soft key two times to return to radio operation.
 
 Then also follow the steps on page 125 of the manual to select which sentences the GX2200 sends out. I personally selected the GGA and RMC sentences. By default, all NMEA sentences are turned off, and you'll only get AIS sentences, so if you want to use the GX2200 as the GPS that drives your OpenCPN system as I did, you'll want to follow these steps.
-
-
 
 1.  Press and hold the CALL/MENU key until Setup Menu appears
 1.  Rotate the CH know to select GPS SETUP menu
@@ -146,8 +141,6 @@ Then also follow the steps on page 125 of the manual to select which sentences t
 
 Here's what a **first-time startup** will typically involve:
 
-
-
 1.  With your smartphone or laptop, confirm that you can connect to the wireless network. Unless you have the router connected to a cable modem or some other connection to the internet, you should not expect to be able to load any web pages, etc., but you should be able to _connect_ using the SSID and password above.
 1.  Turn on power to the bridge unit. Assuming that its last known network is not "visible" from the boat, you should see the green LED flash 3  quarter-second flashes, and no more.
 1.  After a few seconds, use your smartphone or laptop to select a new wireless network. You should see a network called "NMEA Bridge AP". Go ahead and select that network. Your phone should attempt to connect, and be immediately brought to a web page saying "NMEA Bridge AP", with a button saying "Configure WiFi", and looking something like this:
@@ -157,7 +150,6 @@ Here's what a **first-time startup** will typically involve:
 You can now turn on your radio, and after a few moments, you should see the green LED give an occasional flash, as NMEA data is sent to the router and then broadcast to the rest of the wireless network. Here's a sequence of phone screenshots, with annotations, to show the process.
 
 First I go to Settings and pick Wifi, and see the list of available networks. See the one saying "NMEA Bridge AP"? I click on that:
-
 
 ##
 
@@ -222,8 +214,7 @@ where you can see that the bridge access point is no longer an available network
 
 ## Typical use _after_ initial configuration
 
-After the initial configuration, the bridge unit should work without any intervention on your part, _as long as you turn on your WiFi Router before the bridge unit_. If the bridge unit is turned on before the router, it may try to connect and fail, at which point it will set up the NMEA Bridge AP
-
+After the initial configuration, the bridge unit should work without any intervention on your part, _as long as you turn on your WiFi Router before the bridge unit_. If the bridge unit is turned on before the router, it may try to connect and fail, at which point it will set up the NMEA Bridge AP 
 network as above, allowing you to reconfigure if you so desire. Typically, you won't want to do this, and the solution is to turn off the bridge unit, turn on the router, and then turn on the bridge unit. It will reconnect to the router's network and work normally. Until the radio is also turned on, the bridge unit will simply go through its initial blinking-lights phase and then sit idle, with no lights blinking at all.
 
 On the other hand, if the bridge is unable to connect to a Wifi network at all, despite repeated attempts, it'll continue to operate (in the sense of running its main loop, where OTA programming might happen, at least initially), but with the red alarm light on continuously.
@@ -261,6 +252,7 @@ On that page, I (see blue circle) click on the "Show NMEA Debug Window", which c
 
 Once everything is working, you can turn off the NMEA Debug window so that it stops obscuring part of your chart.
 
+N.B.: As of 2021, with Android 10 or higher, Android phones no longer seem to be able to receive UDP packets, so if you want to run OpenCPN on your android phone, this bridge device will be of no use to you, alas.
 
 ## Technical details
 
